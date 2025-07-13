@@ -2,23 +2,32 @@
 
 > [!NOTE]
 > This project is under development and subject to change.
+> Electron version 36.0.0 or later is required.
 
-## Building and Development
+## Installation
 
-- Clone the repository to your local machine
-- Run `npm install` to install dependencies
-- Run `npm link` to link the package globally
-- Run `npm run build` to build the project
+- Install the package:
 
-#### Configuring an Electron App to use Devtron
+```bash
+npm install @hitarth-gg/devtron --save-dev
+```
 
-- In your Electron app run `npm link @electron/devtron` to link the Devtron package
 - In your Electron app's `main.js` (or other relevant file) add the following code to load Devtron:
 
 ```js
+//main.js
+const { devtron } = require('@hitarth-gg/devtron');
+// or import { devtron } from '@hitarth-gg/devtron'
+
+devtron.install(); // call this function at the top of your file
+```
+
+or call `devtron.install()` inside the `app.whenReady()` callback like this:
+
+```js
 // main.js
-const { devtron } = require('@electron/devtron');
-// or import { devtron } from '@electron/devtron'
+const { devtron } = require('@hitarth-gg/devtron');
+// or import { devtron } from '@hitarth-gg/devtron'
 
 // function createWindow() {...}
 
@@ -32,10 +41,10 @@ app.whenReady().then(() => {
 
 ```js
 // preload.js
-const { monitorRenderer } = require('@electron/devtron/monitorRenderer');
-// or import { monitorRenderer } from '@electron/devtron/monitorRenderer'
+const { monitorRenderer } = require('@hitarth-gg/devtron/monitorRenderer');
+// or import { monitorRenderer } from '@hitarth-gg/devtron/monitorRenderer'
 
-monitorRenderer();
+monitorRenderer(); // call this function at the top of your file
 ```
 
 If Devtron is installed correctly, it should appear as a tab in the Developer Tools of your Electron app.
