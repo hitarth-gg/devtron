@@ -28,7 +28,7 @@ devtron.install(); // call this function at the top of your file
 const isDev = true
 
 async function installDevtron() {
-  const { devtron } = await import('@hitarth-gg/devtron')
+  const { devtron } = await import('@electron/devtron')
   await devtron.install()
 }
 
