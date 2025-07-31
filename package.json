@@ -2,6 +2,9 @@
   "name": "@hitarth-gg/devtron",
   "version": "0.0.0-development.9",
   "description": "Electron DevTools Extension to track IPC events",
+  "main": "./dist/cjs/index.cjs",
+  "module": "./dist/mjs/index.mjs",
+  "types": "./dist/types/index.d.ts",
   "exports": {
     ".": {
       "import": "./dist/mjs/index.mjs",
