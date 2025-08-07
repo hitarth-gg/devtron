@@ -3,22 +3,14 @@
 > [!NOTE]
 > This project is under development and subject to change.
 
-## Building and Development
-
-- Clone the repository to your local machine
-- Run `npm install` to install dependencies
-- Run `npm link` to link the package globally
-- Run `npm run build` to build the project
-
 #### Configuring an Electron App to use Devtron
 
-- In your Electron app run `npm link @electron/devtron` to link the Devtron package
 - In your Electron app's `main.js` (or other relevant file) add the following code to load Devtron:
 
 ```js
 // main.js
-const { devtron } = require('@electron/devtron');
-// or import { devtron } from '@electron/devtron'
+const { devtron } = require('@hitarth-gg/devtron');
+// or import { devtron } from '@hitarth-gg/devtron'
 
 devtron.install(); // call this function at the top of your file
 ```
@@ -31,7 +23,7 @@ const { app } = require('electron');
 const isDev = !app.isPackaged;
 
 async function installDevtron() {
-  const { devtron } = await import('@electron/devtron');
+  const { devtron } = await import('@hitarth-gg/devtron');
   await devtron.install();
 }
 

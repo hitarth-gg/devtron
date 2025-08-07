@@ -1,6 +1,6 @@
 {
-  "name": "@electron/devtron",
-  "version": "0.0.0-development",
+  "name": "@hitarth-gg/devtron",
+  "version": "0.0.0-development.11",
   "description": "Electron DevTools Extension to track IPC events",
   "types": "./dist/types/index.d.ts",
   "exports": {
@@ -84,7 +84,8 @@
     "denque": "^2.1.0",
     "lucide-react": "^0.513.0",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "uuid": "^11.1.0"
   },
   "files": [
     "dist/",

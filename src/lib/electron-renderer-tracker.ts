@@ -1,6 +1,8 @@
 import { ipcRenderer } from 'electron';
 import { MSG_TYPE } from '../common/constants';
 import type { Direction, IpcEventData } from '../types/shared';
+import { performance } from 'node:perf_hooks';
+import { v4 as uuidv4 } from 'uuid';
 
 interface PanelMessage {
   source: typeof MSG_TYPE.SEND_TO_PANEL;
