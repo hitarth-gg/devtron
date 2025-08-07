@@ -135,7 +135,7 @@ export function monitorRenderer(): void {
   };
 
   ipcRenderer.sendSync = function (channel: string, ...args: any[]) {
-    const uuid = uuidv4(); // uuid is used to match the response with the request
+    const uuid = crypto.randomUUID(); // uuid is used to match the response with the request
     const payload = {
       __uuid__devtron: uuid,
       args,
@@ -150,7 +150,7 @@ export function monitorRenderer(): void {
   };
 
   ipcRenderer.invoke = async function (channel: string, ...args: any[]): Promise<any> {
-    const uuid = uuidv4(); // uuid is used to match the response with the request
+    const uuid = crypto.randomUUID(); // uuid is used to match the response with the request
     const payload = {
       __uuid__devtron: uuid,
       args,
