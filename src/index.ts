@@ -1,30 +1,75 @@
-import { app, session } from 'electron';
+import { app, ipcMain, session } from 'electron';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import type { Direction, IpcEventData, ServiceWorkerDetails } from './types/shared';
 
+interface TrackIpcEventOptions {
+  direction: Direction;
+  channel: string;
+  args: any[];
+  devtronSW: Electron.ServiceWorkerMain;
+  serviceWorkerDetails?: ServiceWorkerDetails;
+  method?: string;
+}
+
+type Channel = string;
+type Listener = any;
+
 let isInstalled = false;
 let isInstalledToDefaultSession = false;
+let devtronSW: Electron.ServiceWorkerMain;
+
+const isPayloadWithUuid = (payload: any[]): boolean => {
+  // If the first argument is an object with __uuid__devtron then it is a custom payload
+  return (
+    payload[0] &&
+    typeof payload[0] === 'object' &&
+    payload[0].__uuid__devtron &&
+    Array.isArray(payload[0].args)
+  );
+};
+
+const getArgsFromPayload = (payload: any[]): any[] => {
+  if (isPayloadWithUuid(payload)) {
+    // If the payload is a custom payload, return the args array
+    return payload[0].args || [];
+  }
+  // Otherwise, return the payload as is
+  return payload;
+};
+
+const getUuidFromPayload = (payload: any[]): string => {
+  if (isPayloadWithUuid(payload)) {
+    return payload[0].__uuid__devtron;
+  }
+  return '';
+};
 
 /**
  * sends captured IPC events to the service-worker preload script
  */
-function trackIpcEvent(
-  direction: Direction,
-  channel: string,
-  args: any[],
-  devtronSW: Electron.ServiceWorkerMain,
-  serviceWorkerDetails?: ServiceWorkerDetails,
-) {
+function trackIpcEvent({
+  direction,
+  channel,
+  args,
+  devtronSW,
+  serviceWorkerDetails,
+  method,
+}: TrackIpcEventOptions) {
+  const uuid = getUuidFromPayload(args);
+  const newArgs = getArgsFromPayload(args);
+
   const eventData: IpcEventData = {
     direction,
     channel,
-    args,
+    args: newArgs,
     timestamp: Date.now(),
     serviceWorkerDetails,
   };
+  if (method) eventData.method = method;
+  if (uuid) eventData.uuid = uuid;
 
-  if (devtronSW === null) {
+  if (!devtronSW) {
     console.error('The service-worker for Devtron is not registered yet. Cannot track IPC event.');
     return;
   }
@@ -40,9 +85,10 @@ function registerIpcListeners(ses: Electron.Session, devtronSW: Electron.Service
       channel: string,
       args: any[],
     ) => {
-      if (event.type === 'frame') trackIpcEvent('renderer-to-main', channel, args, devtronSW);
+      if (event.type === 'frame')
+        trackIpcEvent({ direction: 'renderer-to-main', channel, args, devtronSW });
       else if (event.type === 'service-worker')
-        trackIpcEvent('service-worker-to-main', channel, args, devtronSW);
+        trackIpcEvent({ direction: 'service-worker-to-main', channel, args, devtronSW });
     },
   );
 
@@ -54,9 +100,10 @@ function registerIpcListeners(ses: Electron.Session, devtronSW: Electron.Service
       channel: string,
       args: any[],
     ) => {
-      if (event.type === 'frame') trackIpcEvent('renderer-to-main', channel, args, devtronSW);
+      if (event.type === 'frame')
+        trackIpcEvent({ direction: 'renderer-to-main', channel, args, devtronSW });
       else if (event.type === 'service-worker')
-        trackIpcEvent('service-worker-to-main', channel, args, devtronSW);
+        trackIpcEvent({ direction: 'service-worker-to-main', channel, args, devtronSW });
     },
   );
   ses.on(
@@ -67,9 +114,10 @@ function registerIpcListeners(ses: Electron.Session, devtronSW: Electron.Service
       channel: string,
       args: any[],
     ) => {
-      if (event.type === 'frame') trackIpcEvent('renderer-to-main', channel, args, devtronSW);
+      if (event.type === 'frame')
+        trackIpcEvent({ direction: 'renderer-to-main', channel, args, devtronSW });
       else if (event.type === 'service-worker')
-        trackIpcEvent('service-worker-to-main', channel, args, devtronSW);
+        trackIpcEvent({ direction: 'service-worker-to-main', channel, args, devtronSW });
     },
   );
 }
@@ -96,16 +144,16 @@ function registerServiceWorkerSendListener(
 
     const originalSend = sw.send;
     sw.send = function (...args) {
-      trackIpcEvent(
-        'main-to-service-worker',
-        args[0], // channel
-        args.slice(1), // args
+      trackIpcEvent({
+        direction: 'main-to-service-worker',
+        channel: args[0],
+        args: args.slice(1),
         devtronSW,
-        {
+        serviceWorkerDetails: {
           serviceWorkerScope: sw.scope,
           serviceWorkerVersionId: sw.versionId,
         },
-      );
+      });
       return originalSend.apply(this, args);
     };
   }
@@ -126,16 +174,16 @@ function registerServiceWorkerSendListener(
 
       const originalSend = sw.send;
       sw.send = function (...args) {
-        trackIpcEvent(
-          'main-to-service-worker',
-          args[0], // channel
-          args.slice(1), // args
+        trackIpcEvent({
+          direction: 'main-to-service-worker',
+          channel: args[0],
+          args: args.slice(1),
           devtronSW,
-          {
+          serviceWorkerDetails: {
             serviceWorkerScope: sw.scope,
             serviceWorkerVersionId: sw.versionId,
           },
-        );
+        });
         return originalSend.apply(this, args);
       };
     }
@@ -146,6 +194,7 @@ async function startServiceWorker(ses: Electron.Session, extension: Electron.Ext
   try {
     const sw = await ses.serviceWorkers.startWorkerForScope(extension.url);
     sw.startTask();
+    devtronSW = sw;
     registerIpcListeners(ses, sw);
     registerServiceWorkerSendListener(ses, sw);
   } catch (error) {
@@ -163,6 +212,7 @@ async function startServiceWorker(ses: Electron.Session, extension: Electron.Ext
         if (details.scope === extension.url) {
           const sw = await ses.serviceWorkers.startWorkerForScope(extension.url);
           sw.startTask();
+          devtronSW = sw;
           registerIpcListeners(ses, sw);
           registerServiceWorkerSendListener(ses, sw);
           ses.serviceWorkers.removeListener('registration-completed', handleDetails);
@@ -176,9 +226,159 @@ async function startServiceWorker(ses: Electron.Session, extension: Electron.Ext
   }
 }
 
+function patchIpcMain() {
+  const listenerMap = new Map<Channel, Map<Listener, Listener>>(); // channel -> (originalListener -> tracked/cleaned Listener)
+
+  const storeTrackedListener = (channel: string, original: any, tracked: any): void => {
+    if (!listenerMap.has(channel)) {
+      listenerMap.set(channel, new Map());
+    }
+    listenerMap.get(channel)!.set(original, tracked);
+  };
+
+  const originalOn = ipcMain.on.bind(ipcMain);
+  const originalOff = ipcMain.off.bind(ipcMain);
+  const originalOnce = ipcMain.once.bind(ipcMain);
+  const originalAddListener = ipcMain.addListener.bind(ipcMain);
+  const originalRemoveListener = ipcMain.removeListener.bind(ipcMain);
+  const originalRemoveAllListeners = ipcMain.removeAllListeners.bind(ipcMain);
+  const originalHandle = ipcMain.handle.bind(ipcMain);
+  const originalHandleOnce = ipcMain.handleOnce.bind(ipcMain);
+  const originalRemoveHandler = ipcMain.removeHandler.bind(ipcMain);
+
+  ipcMain.on = (
+    channel: string,
+    listener: (event: Electron.IpcMainEvent, ...args: any[]) => void,
+  ) => {
+    const cleanedListener = (event: Electron.IpcMainEvent, ...args: any[]) => {
+      const newArgs = getArgsFromPayload(args);
+      listener(event, ...newArgs);
+    };
+    storeTrackedListener(channel, listener, cleanedListener);
+    return originalOn(channel, cleanedListener);
+  };
+
+  ipcMain.off = (
+    channel: string,
+    listener: (event: Electron.IpcMainEvent, ...args: any[]) => void,
+  ) => {
+    const channelMap = listenerMap.get(channel);
+    const cleanedListener = channelMap?.get(listener);
+
+    if (!cleanedListener) return ipcMain;
+
+    channelMap?.delete(listener);
+    if (channelMap && channelMap.size === 0) {
+      listenerMap.delete(channel);
+    }
+
+    trackIpcEvent({ direction: 'main', channel, args: [], devtronSW, method: 'off' });
+    return originalOff(channel, cleanedListener);
+  };
+
+  ipcMain.once = (
+    channel: string,
+    listener: (event: Electron.IpcMainEvent, ...args: any[]) => void,
+  ) => {
+    const cleanedListener = (event: Electron.IpcMainEvent, ...args: any[]) => {
+      const newArgs = getArgsFromPayload(args);
+      listener(event, ...newArgs);
+    };
+    return originalOnce(channel, cleanedListener);
+  };
+
+  ipcMain.addListener = (
+    channel: string,
+    listener: (event: Electron.IpcMainEvent, ...args: any[]) => void,
+  ) => {
+    const cleanedListener = (event: Electron.IpcMainEvent, ...args: any[]) => {
+      const newArgs = getArgsFromPayload(args);
+      listener(event, ...newArgs);
+    };
+    storeTrackedListener(channel, listener, cleanedListener);
+    return originalAddListener(channel, cleanedListener);
+  };
+
+  ipcMain.removeListener = (
+    channel: string,
+    listener: (event: Electron.IpcMainEvent, ...args: any[]) => void,
+  ) => {
+    const channelMap = listenerMap.get(channel);
+    const cleanedListener = channelMap?.get(listener);
+
+    if (!cleanedListener) return ipcMain;
+
+    // Remove the listener from the map
+    channelMap?.delete(listener);
+    // If no listeners left for this channel, remove the channel from the map
+    if (channelMap && channelMap.size === 0) {
+      listenerMap.delete(channel);
+    }
+    trackIpcEvent({ direction: 'main', channel, args: [], devtronSW, method: 'removeListener' });
+    return originalRemoveListener(channel, cleanedListener);
+  };
+
+  ipcMain.removeAllListeners = (channel?: string) => {
+    if (channel) {
+      listenerMap.delete(channel);
+      trackIpcEvent({
+        direction: 'main',
+        channel,
+        args: [],
+        devtronSW,
+        method: 'removeAllListeners',
+      });
+      return originalRemoveAllListeners(channel);
+    } else {
+      listenerMap.clear();
+      trackIpcEvent({
+        direction: 'main',
+        channel: '',
+        args: [],
+        devtronSW,
+        method: 'removeAllListeners',
+      });
+      listenerMap.clear();
+      return originalRemoveAllListeners();
+    }
+  };
+
+  ipcMain.handle = (
+    channel: string,
+    listener: (event: Electron.IpcMainInvokeEvent, ...args: any[]) => Promise<any> | any,
+  ) => {
+    const cleanedListener = async (event: Electron.IpcMainInvokeEvent, ...args: any[]) => {
+      const newArgs = getArgsFromPayload(args);
+      const result = await listener(event, ...newArgs);
+      return result;
+    };
+    return originalHandle(channel, cleanedListener);
+  };
+
+  ipcMain.handleOnce = (
+    channel: string,
+    listener: (event: Electron.IpcMainInvokeEvent, ...args: any[]) => Promise<any> | any,
+  ) => {
+    const cleanedListener = async (event: Electron.IpcMainInvokeEvent, ...args: any[]) => {
+      const newArgs = getArgsFromPayload(args);
+      const result = await listener(event, ...newArgs);
+      return result;
+    };
+    return originalHandleOnce(channel, cleanedListener);
+  };
+
+  ipcMain.removeHandler = (channel: string) => {
+    listenerMap.delete(channel);
+    trackIpcEvent({ direction: 'main', channel, args: [], devtronSW, method: 'removeHandler' });
+    return originalRemoveHandler(channel);
+  };
+}
+
 async function install() {
   if (isInstalled) return;
   isInstalled = true;
+
+  patchIpcMain();
 
   const installToSession = async (ses: Electron.Session) => {
     if (ses === session.defaultSession && isInstalledToDefaultSession) return;
