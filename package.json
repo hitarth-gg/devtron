@@ -1,6 +1,6 @@
 {
   "name": "@hitarth-gg/devtron",
-  "version": "0.0.0-development.11",
+  "version": "0.0.0-development.13",
   "description": "Electron DevTools Extension to track IPC events",
   "types": "./dist/types/index.d.ts",
   "exports": {
