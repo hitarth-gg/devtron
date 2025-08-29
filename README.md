@@ -12,13 +12,13 @@
 
 #### Configuring an Electron App to use Devtron
 
-- In your Electron app run `npm link @electron/devtron` to link the Devtron package
+- In your Electron app run `npm link @hitarth-gg/devtron` to link the Devtron package
 - In your Electron app's `main.js` (or other relevant file) add the following code to load Devtron:
 
 ```js
 // main.js
-const { devtron } = require('@electron/devtron');
-// or import { devtron } from '@electron/devtron'
+const { devtron } = require('@hitarth-gg/devtron');
+// or import { devtron } from '@hitarth-gg/devtron'
 
 devtron.install(); // call this function at the top of your file
 ```
@@ -31,7 +31,7 @@ const { app } = require('electron');
 const isDev = !app.isPackaged;
 
 async function installDevtron() {
-  const { devtron } = await import('@electron/devtron');
+  const { devtron } = await import('@hitarth-gg/devtron');
   await devtron.install();
 }
 
@@ -50,13 +50,15 @@ Installs Devtron into the Electron app. Refer to [Configuring an Electron App to
 
 #### `Options`
 
-| Option       | Type                                            | Default     | Description                                                                                                                           |
-| ------------ | ----------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `quiet`      | `boolean`                                       | `false`     | Suppresses all logs except `error` level logs from appearing in the terminal. Precisely, it ignores `debug`, `info`, and `warn` logs. |
-| `ignoreLogs` | `Array<'debug' \| 'info' \| 'warn' \| 'error'>` | `undefined` | List of log levels to ignore, e.g. `['debug', 'info']`. Overrides the `quiet` option if both are set.                                 |
+| Option     | Type                                               | Default   | Description                                                                                                                                                                                                                                                                                        |
+| ---------- | -------------------------------------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `logLevel` | `'debug' \| 'info' \| 'warn' \| 'error' \| 'none'` | `'debug'` | Sets the minimum log level for the logger. Messages below this level are ignored. <br><br> **Levels:** <br>• `debug` — logs: debug, info, warn, error <br>• `info` — logs: info, warn, error <br>• `warn` — logs: warn, error <br>• `error` — logs: error only <br>• `none` — disables all logging |
+
+Examples:
 
 ```js
-await devtron.install({ quiet: true });
+// Only 'warn' and 'error' logs will appear in the terminal
+await devtron.install({ logLevel: 'warn' });
 ```
 
 ### `await devtron.getEvents()`
@@ -72,7 +74,7 @@ Here's a usage example that keeps logging IPC events every 2 seconds:
 
 ```js
 // main.js
-import { devtron } from '@electron/devtron';
+import { devtron } from '@hitarth-gg/devtron';
 
 // Ensure Devtron is installed before calling getEvents()
 devtron.install();

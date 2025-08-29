@@ -379,9 +379,8 @@ async function install(options: InstallOptions = {}) {
   if (isInstalled) return;
   isInstalled = true;
 
-  // set logger options
-  if (options.quiet) logger.setQuiet(true);
-  if (options.ignoreLogs) logger.setIgnoreLogs(options.ignoreLogs); // overrides `quiet` option
+  // set log level
+  if (options.logLevel) logger.setLogLevel(options.logLevel);
 
   patchIpcMain();
 
@@ -394,10 +393,10 @@ async function install(options: InstallOptions = {}) {
       // register service worker preload script
       const dirname = __dirname; // __dirname is replaced with import.meta.url in ESM builds using webpack
       const serviceWorkerPreloadPath = createRequire(dirname).resolve(
-        '@electron/devtron/service-worker-preload',
+        '@hitarth-gg/devtron/service-worker-preload',
       );
       const rendererPreloadPath = createRequire(dirname).resolve(
-        '@electron/devtron/renderer-preload',
+        '@hitarth-gg/devtron/renderer-preload',
       );
 
       ses.registerPreloadScript({
