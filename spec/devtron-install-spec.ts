@@ -114,7 +114,7 @@ describe('Tracking IPC Events', () => {
   before(async () => {
     await delay(200); // If some test fails when it shouldn't, try increasing this delay
     registerDevtronIpc();
-    // await delay(300);
+    await delay(200);
 
     ipcMain.on('test-main-on', () => {});
 
