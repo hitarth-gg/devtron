@@ -128,9 +128,9 @@ describe('Tracking IPC Events', () => {
       return 'handled';
     });
 
-    await delay(300); // If some test fails when it shouldn't, try increasing this delay
+    await delay(2000); // If some test fails when it shouldn't, try increasing this delay
     registerDevtronIpc();
-    await delay(300);
+    await delay(2000);
 
     mainWindow.webContents.send('test-renderer-on', 'arg1', 'arg2');
     mainWindow.webContents.send('test-renderer-addListener', 'arg1', 'arg2');
@@ -155,7 +155,7 @@ describe('Tracking IPC Events', () => {
     ipcMain.removeAllListeners('test-main-removeAllListeners');
     ipcMain.removeHandler('test-main-removeHandler');
 
-    await delay(300);
+    await delay(2000);
 
     /**
      * During testing, the `devtronSW` variable in "src/index.ts"
