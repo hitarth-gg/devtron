@@ -26,6 +26,7 @@ jobs:
           - ubuntu-latest
     runs-on: '${{ matrix.os }}'
     steps:
+      - run: git config --global core.autocrlf input
       - name: Configure Ubuntu
         if: contains(matrix.os, 'ubuntu')
         shell: bash
