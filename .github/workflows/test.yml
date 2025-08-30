@@ -24,7 +24,6 @@ jobs:
           - macos-latest
           - windows-latest
           - ubuntu-latest
-          # TODO(dsanders11: Enable these once we fix tests on those platforms in CI
     runs-on: '${{ matrix.os }}'
     steps:
       - name: Configure Ubuntu
@@ -52,9 +51,8 @@ jobs:
         run: npm ci
       - name: Install Electron
         run: npm install "electron@${{ matrix.electron-version }}"
-      # TODO(dsanders11): Enable this once we get a clean lint state on `main`
-      # - name: Lint
-      #   run: npm run lint
+      - name: Lint
+        run: npm run lint
       - name: Build
         run: npm run build
       - name: Test
