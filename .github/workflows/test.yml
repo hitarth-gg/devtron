@@ -25,9 +25,9 @@ jobs:
     runs-on: '${{ matrix.os }}'
     steps:
       - name: Configure Ubuntu
+        if: contains(matrix.os, 'ubuntu')
         shell: bash
         run: |-
-          if: contains(matrix.os, 'ubuntu')
           # Workaround for Electron AppImage apps failing to initialize on Ubuntu  due to AppArmor restrictions
           # Disables unprivileged user namespaces restriction to allow Electron apps to run
           # Reference: https://github.com/electron/electron/issues/42510
