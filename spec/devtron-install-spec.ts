@@ -112,10 +112,6 @@ describe('Tracking IPC Events', () => {
   if (!mainWindow) throw new Error('Main window is not available');
 
   before(async () => {
-    await delay(200); // If some test fails when it shouldn't, try increasing this delay
-    registerDevtronIpc();
-    await delay(200);
-
     ipcMain.on('test-main-on', () => {});
 
     ipcMain.on('test-main-sendSync', (event) => {
@@ -132,7 +128,8 @@ describe('Tracking IPC Events', () => {
       return 'handled';
     });
 
-    await delay(200);
+    await delay(1000); // If some test fails when it shouldn't, try increasing this delay
+    registerDevtronIpc();
 
     mainWindow.webContents.send('test-renderer-on', 'arg1', 'arg2');
     mainWindow.webContents.send('test-renderer-addListener', 'arg1', 'arg2');
