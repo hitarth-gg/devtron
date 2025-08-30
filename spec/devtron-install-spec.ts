@@ -130,6 +130,7 @@ describe('Tracking IPC Events', () => {
 
     await delay(300); // If some test fails when it shouldn't, try increasing this delay
     registerDevtronIpc();
+    await delay(300);
 
     mainWindow.webContents.send('test-renderer-on', 'arg1', 'arg2');
     mainWindow.webContents.send('test-renderer-addListener', 'arg1', 'arg2');

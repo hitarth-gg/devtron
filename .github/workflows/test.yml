@@ -20,8 +20,8 @@ jobs:
         os:
           - macos-latest
           - windows-latest
+          - ubuntu-latest
           # TODO(dsanders11: Enable these once we fix tests on those platforms in CI
-          # - ubuntu-latest
     runs-on: '${{ matrix.os }}'
     steps:
       - name: Checkout
