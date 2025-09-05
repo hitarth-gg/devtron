@@ -49,10 +49,10 @@ describe('Devtron Installation', () => {
           if (devtronExtUrl !== swScope) return;
 
           clearTimeout(timeout);
-          resolve();
           devtronSW = session.defaultSession.serviceWorkers.getWorkerFromVersionID(
             details?.versionId,
           );
+          resolve();
         }
       });
     });
