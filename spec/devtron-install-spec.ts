@@ -36,7 +36,9 @@ describe('Devtron Installation', () => {
         reject(new Error('Service worker did not start within 60 seconds'));
       }, 60 * 1000);
 
-      session.defaultSession.serviceWorkers.on('running-status-changed', (details) => {
+      const listener = (
+        details: Electron.Event<Electron.ServiceWorkersRunningStatusChangedEventParams>,
+      ) => {
         if (details.runningStatus === 'running') {
           const devtronExtUrl = session.defaultSession.extensions
             .getAllExtensions()
@@ -52,14 +54,16 @@ describe('Devtron Installation', () => {
           devtronSW = session.defaultSession.serviceWorkers.getWorkerFromVersionID(
             details?.versionId,
           );
+          session.defaultSession.serviceWorkers.removeListener('running-status-changed', listener);
           resolve();
         }
-      });
+      };
+
+      session.defaultSession.serviceWorkers.on('running-status-changed', listener);
     });
 
     await devtron.install();
     await waitForServiceWorker;
-    // registerDevtronIpc();
   });
 
   it('should load the extension in defaultSession', () => {
