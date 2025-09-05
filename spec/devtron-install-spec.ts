@@ -158,7 +158,17 @@ describe('Tracking IPC Events', () => {
   const mainWindow = BrowserWindow.getAllWindows()[0];
   if (!mainWindow) throw new Error('Main window is not available');
 
-  before(async () => {
+  before(async function () {
+    this.timeout(30 * 1000);
+    // wait until webContents is ready
+    await new Promise<void>((resolve) => {
+      const wc = mainWindow.webContents;
+      if (!wc.isLoading()) {
+        return resolve(); // already loaded
+      }
+      wc.once('did-finish-load', () => resolve());
+    });
+
     ipcMain.on('test-main-on', () => {});
 
     ipcMain.on('test-main-sendSync', (event) => {
@@ -175,7 +185,7 @@ describe('Tracking IPC Events', () => {
       return 'handled';
     });
 
-    // await delay(1000); // If some test fails when it shouldn't, try increasing this delay
+    // await delay(100); // If some test fails when it shouldn't, try increasing this delay
     // registerDevtronIpc();
 
     mainWindow.webContents.send('test-renderer-on', 'arg1', 'arg2');
@@ -201,7 +211,7 @@ describe('Tracking IPC Events', () => {
     ipcMain.removeAllListeners('test-main-removeAllListeners');
     ipcMain.removeHandler('test-main-removeHandler');
 
-    await delay(300);
+    await delay(3000);
 
     /**
      * During testing, the `devtronSW` variable in "src/index.ts"
