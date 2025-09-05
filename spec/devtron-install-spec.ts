@@ -26,10 +26,57 @@ async function getEvents(): Promise<IpcEventDataIndexed[]> {
 
 describe('Devtron Installation', () => {
   /* --------------- test on defaultSession --------------- */
-  before(async () => {
+  before(async function () {
     if (!session.defaultSession) throw new Error('Default session is not available');
 
+    // session.defaultSession.serviceWorkers.on('console-message', (event, messageDetails) => {
+    //   if (messageDetails.message === 'Devtron service-worker started successfully')
+    //     registerDevtronIpc();
+    // });
+
+    this.timeout(60 * 1000);
+
+    if (!session.defaultSession) {
+      throw new Error('Default session is not available');
+    }
+
+    const waitForServiceWorker = new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error('Service worker did not start within 60 seconds'));
+      }, 60000);
+
+      // const listener = (event: Electron.Event, messageDetails: Electron.MessageDetails) => {
+      //   console.log('Console message from service worker:', messageDetails.message);
+      //   if (messageDetails.message === 'Devtron service-worker is running') {
+      //     // clearTimeout(timeout);
+      //     session.defaultSession.serviceWorkers.removeListener('console-message', listener);
+      //     // resolve();
+      //   }
+      // };
+
+      // session.defaultSession.serviceWorkers.on('console-message', listener);
+
+      session.defaultSession.serviceWorkers.on('running-status-changed', (details) => {
+        if (details.runningStatus === 'running') {
+          const devtronExtUrl = session.defaultSession.extensions
+            .getAllExtensions()
+            .find((ext) => ext.name === 'devtron')?.url;
+
+          const swScope = session.defaultSession.serviceWorkers.getInfoFromVersionID(
+            details?.versionId,
+          ).scope;
+
+          if (devtronExtUrl !== swScope) return;
+
+          clearTimeout(timeout);
+          resolve();
+        }
+      });
+    });
+
     await devtron.install();
+    await waitForServiceWorker;
+    registerDevtronIpc();
   });
 
   it('should load the extension in defaultSession', () => {
@@ -128,8 +175,8 @@ describe('Tracking IPC Events', () => {
       return 'handled';
     });
 
-    await delay(3000); // If some test fails when it shouldn't, try increasing this delay
-    registerDevtronIpc();
+    // await delay(1000); // If some test fails when it shouldn't, try increasing this delay
+    // registerDevtronIpc();
 
     mainWindow.webContents.send('test-renderer-on', 'arg1', 'arg2');
     mainWindow.webContents.send('test-renderer-addListener', 'arg1', 'arg2');
